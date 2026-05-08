@@ -1,0 +1,797 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>連荘シミュレータ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+      background: #0d1117; color: #e6edf3;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 32px 16px;
+    }
+    h1 {
+      font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px;
+      background: linear-gradient(135deg, #f7c948, #ff6b6b);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: 0.85rem; color: #8b949e; margin-bottom: 24px; }
+
+    /* tab */
+    .tab-bar {
+      display: flex; width: 100%; max-width: 560px;
+      background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+      padding: 4px; margin-bottom: 24px; gap: 4px;
+    }
+    .tab-btn {
+      flex: 1; padding: 9px 0; border: none; border-radius: 7px;
+      background: transparent; color: #8b949e;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab-btn.active { background: #21262d; color: #e6edf3; }
+    .tab-btn[data-tab="st"].active      { box-shadow: inset 0 0 0 1px #f7c948; color: #f7c948; }
+    .tab-btn[data-tab="tenraku"].active { box-shadow: inset 0 0 0 1px #ff6b6b; color: #ff6b6b; }
+
+    /* card */
+    .card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+      padding: 24px; width: 100%; max-width: 560px; margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1rem; font-weight: 600; color: #8b949e;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 20px; border-bottom: 1px solid #30363d; padding-bottom: 10px;
+    }
+
+    /* forms */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-row-single { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.82rem; color: #8b949e; font-weight: 500; }
+    .input-wrap {
+      display: flex; align-items: center; background: #0d1117;
+      border: 1px solid #30363d; border-radius: 8px; overflow: hidden; transition: border-color 0.2s;
+    }
+    .input-wrap:focus-within { border-color: #f7c948; }
+    .input-prefix {
+      padding: 0 10px; color: #8b949e; font-size: 0.9rem;
+      background: #161b22; border-right: 1px solid #30363d;
+      height: 40px; display: flex; align-items: center; white-space: nowrap;
+    }
+    input[type="number"] {
+      background: transparent; border: none; outline: none;
+      color: #e6edf3; font-size: 1rem; padding: 0 12px; height: 40px; width: 100%;
+    }
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .hint { font-size: 0.75rem; color: #484f58; margin-top: 2px; }
+
+    .mode-desc {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 0.78rem; color: #8b949e; background: #0d1117;
+      border: 1px solid #30363d; border-radius: 6px;
+      padding: 9px 12px; margin-bottom: 16px; line-height: 1.6;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .dot-st      { background: #f7c948; }
+    .dot-tenraku { background: #ff6b6b; }
+
+    /* section divider */
+    .section-divider {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; color: #8b949e; font-weight: 600;
+      margin-bottom: 12px; margin-top: 4px;
+    }
+    .section-divider::after { content: ''; flex: 1; height: 1px; background: #30363d; }
+
+    /* buttons */
+    .btn-row { display: flex; gap: 12px; margin-top: 8px; }
+    button { cursor: pointer; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; padding: 10px 20px; transition: opacity 0.2s, transform 0.1s; }
+    button:active { transform: scale(0.97); }
+    .btn-primary  { background: linear-gradient(135deg, #f7c948, #ff8c42); color: #0d1117; flex: 1; }
+    .btn-secondary { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+    .btn-primary:hover  { opacity: 0.9; }
+    .btn-secondary:hover { color: #e6edf3; border-color: #8b949e; }
+
+    /* 振り分けエディタ */
+    .dist-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .dist-table th {
+      font-size: 0.75rem; color: #8b949e; font-weight: 600;
+      padding: 0 6px 6px; text-align: center;
+    }
+    .dist-table td { padding: 4px 4px; }
+    .dist-input-wrap {
+      display: flex; align-items: center; background: #0d1117;
+      border: 1px solid #30363d; border-radius: 6px; overflow: hidden;
+      height: 36px; transition: border-color 0.2s;
+    }
+    .dist-input-wrap:focus-within { border-color: #f7c948; }
+    .dist-input-wrap input[type="number"] { height: 36px; font-size: 0.9rem; padding: 0 8px; }
+    .dist-suffix {
+      padding: 0 8px; font-size: 0.82rem; color: #8b949e;
+      background: #161b22; border-left: 1px solid #30363d;
+      height: 36px; display: flex; align-items: center; white-space: nowrap;
+    }
+    .dist-del-btn {
+      background: transparent; border: 1px solid #30363d; color: #ff6b6b;
+      border-radius: 6px; padding: 0; width: 30px; height: 36px;
+      font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .dist-del-btn:hover { background: rgba(255,107,107,0.12); }
+    .dist-add-btn {
+      background: #21262d; border: 1px dashed #30363d; color: #58a6ff;
+      border-radius: 6px; padding: 7px 14px; font-size: 0.82rem; font-weight: 600;
+      width: 100%; margin-top: 2px;
+    }
+    .dist-add-btn:hover { border-color: #58a6ff; }
+    .dist-total {
+      display: flex; justify-content: flex-end; align-items: center;
+      gap: 6px; font-size: 0.78rem; color: #8b949e; margin-top: 6px;
+    }
+    .dist-total .total-val { font-weight: 700; }
+    .total-ok   { color: #3fb950; }
+    .total-warn { color: #ff6b6b; }
+
+    /* result summary */
+    .result-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .stat-pill {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+      padding: 10px 16px; display: flex; flex-direction: column;
+      align-items: center; flex: 1; min-width: 80px;
+    }
+    .stat-pill .val { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+    .stat-pill .lbl { font-size: 0.7rem; color: #8b949e; margin-top: 3px; }
+
+    .val.gold   { color: #f7c948; }
+    .val.red    { color: #ff6b6b; }
+    .val.blue   { color: #58a6ff; }
+    .val.purple { color: #a371f7; }
+    .val.green  { color: #3fb950; }
+    .val.gray   { color: #8b949e; }
+
+    /* hit bars */
+    .hit-list { margin-top: 4px; }
+    .hit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .hit-label { font-size: 0.78rem; color: #8b949e; width: 52px; text-align: right; flex-shrink: 0; }
+    .hit-track {
+      flex: 1; background: #21262d; border-radius: 4px; height: 22px;
+      overflow: hidden; position: relative;
+    }
+    .hit-fill {
+      height: 100%; border-radius: 4px; display: flex; align-items: center;
+      padding: 0 8px; font-size: 0.75rem; font-weight: 700; color: #0d1117;
+      white-space: nowrap; min-width: 2px;
+    }
+    .hit-fill.color-hit  { background: linear-gradient(90deg, #58a6ff, #79c0ff); }
+    .hit-fill.color-fall { background: linear-gradient(90deg, #ff6b6b, #ffa07a); }
+    .hit-game-num { font-size: 0.78rem; color: #e6edf3; width: 56px; text-align: left; flex-shrink: 0; }
+    .hit-balls-badge {
+      font-size: 0.72rem; color: #f7c948; background: rgba(247,201,72,0.1);
+      border: 1px solid rgba(247,201,72,0.25); border-radius: 4px;
+      padding: 1px 6px; white-space: nowrap; flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 0.78rem; color: #8b949e; font-weight: 600;
+      margin: 14px 0 8px; display: flex; align-items: center; gap: 6px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #30363d; }
+
+    .end-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; opacity: 0.6; }
+
+    /* payout area */
+    .payout-area {
+      margin-top: 16px; background: #0d1117;
+      border: 1px solid #30363d; border-radius: 10px; padding: 16px;
+    }
+    .payout-area-title {
+      font-size: 0.8rem; color: #8b949e; font-weight: 600; margin-bottom: 12px;
+    }
+    .payout-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    }
+    .payout-cell { text-align: center; }
+    .payout-cell .pv { font-size: 1.4rem; font-weight: 700; }
+    .payout-cell .pl { font-size: 0.7rem; color: #8b949e; margin-top: 3px; }
+    .pv-plus  { color: #3fb950; }
+    .pv-minus { color: #ff6b6b; }
+    .pv-zero  { color: #8b949e; }
+
+    /* 累積バー */
+    .cumul-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .cumul-label { font-size: 0.78rem; color: #8b949e; width: 52px; text-align: right; flex-shrink: 0; }
+    .cumul-track { flex: 1; background: #21262d; border-radius: 4px; height: 20px; overflow: hidden; position: relative; }
+    .cumul-fill {
+      height: 100%; border-radius: 4px; display: flex; align-items: center;
+      padding: 0 8px; font-size: 0.73rem; font-weight: 700;
+      white-space: nowrap; min-width: 2px; transition: width 0.3s;
+    }
+    .cumul-fill.cf-gold { background: linear-gradient(90deg, #f7c948, #ffd700); color: #0d1117; }
+    .cumul-val { font-size: 0.75rem; width: 72px; text-align: left; flex-shrink: 0; color: #f7c948; }
+
+    /* history */
+    .history-table-wrap { overflow-x: auto; max-height: 340px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th {
+      position: sticky; top: 0; background: #21262d; color: #8b949e;
+      font-weight: 600; padding: 10px 8px; text-align: center;
+      border-bottom: 1px solid #30363d; white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #21262d; transition: background 0.15s; }
+    tbody tr:hover { background: #1c2128; }
+    tbody td { padding: 8px; text-align: center; vertical-align: middle; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+    .badge-gold { background: rgba(247,201,72,0.15);  color: #f7c948; }
+    .badge-red  { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+    .badge-blue { background: rgba(88,166,255,0.15);  color: #58a6ff; }
+    .badge-gray { background: rgba(139,148,158,0.15); color: #8b949e; }
+    .badge-mode-st      { background: rgba(247,201,72,0.1);  color: #f7c948; font-size: 0.68rem; }
+    .badge-mode-tenraku { background: rgba(255,107,107,0.1); color: #ff6b6b; font-size: 0.68rem; }
+
+    .seq-cell { font-size: 0.75rem; color: #58a6ff; max-width: 180px; word-break: break-all; text-align: left; line-height: 1.7; }
+    .balls-col { color: #f7c948; font-weight: 700; }
+
+    .empty-history { color: #484f58; font-size: 0.85rem; text-align: center; padding: 24px; }
+
+    @keyframes pop {
+      0%   { transform: scale(0.8); opacity: 0; }
+      60%  { transform: scale(1.05); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animated { animation: pop 0.35s ease forwards; }
+    .no-result { color: #484f58; font-size: 0.9rem; text-align: center; padding: 20px 0; }
+  </style>
+</head>
+<body>
+
+<h1>🎰 連荘シミュレータ</h1>
+<p class="subtitle">ST・時短中の連荘数と出玉をシミュレートします（1回試行）</p>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="st"      onclick="switchTab('st')">🔁 ST方式（回数保証）</button>
+  <button class="tab-btn"        data-tab="tenraku" onclick="switchTab('tenraku')">⚡ 転落方式</button>
+</div>
+
+<div class="card">
+  <h2>⚙ 設定</h2>
+
+  <!-- ST -->
+  <div id="form-st">
+    <div class="mode-desc">
+      <span class="dot dot-st"></span>
+      ST回数内に当たりを引いた場合に連荘。規定回数を消化すると終了。
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>当たり確率（分母）</label>
+        <div class="input-wrap">
+          <span class="input-prefix">1 /</span>
+          <input type="number" id="st-probDenom" value="99" min="0.01" step="0.1" oninput="saveSettings()" />
+        </div>
+        <span class="hint">例: 1.5 → 約66.7%　150 → 約0.67%</span>
+      </div>
+      <div class="form-group">
+        <label>ST回数（1セット当たり）</label>
+        <div class="input-wrap">
+          <input type="number" id="st-stGames" value="100" min="1" step="1" style="padding-left:12px" oninput="saveSettings()" />
+          <span class="input-prefix" style="border-left:1px solid #30363d;border-right:none;">回</span>
+        </div>
+        <span class="hint">例: 100、50、10</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 転落 -->
+  <div id="form-tenraku" style="display:none">
+    <div class="mode-desc">
+      <span class="dot dot-tenraku"></span>
+      毎ゲーム「当たり」か「転落」を独立して判定。転落するまで ST が続く。
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>当たり確率（分母）</label>
+        <div class="input-wrap">
+          <span class="input-prefix">1 /</span>
+          <input type="number" id="tr-probDenom" value="150" min="0.01" step="1" oninput="saveSettings()" />
+        </div>
+        <span class="hint">例: 150 → 約0.67%/ゲーム</span>
+      </div>
+      <div class="form-group">
+        <label>転落確率（分母）</label>
+        <div class="input-wrap">
+          <span class="input-prefix">1 /</span>
+          <input type="number" id="tr-fallDenom" value="30" min="0.01" step="1" oninput="saveSettings()" />
+        </div>
+        <span class="hint">例: 30 → 約3.3%/ゲーム</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 出玉振り分け設定 (ST) -->
+  <div id="dist-section-st">
+    <div class="section-divider">🎁 大当たり出玉振り分け</div>
+    <table class="dist-table">
+      <thead>
+        <tr>
+          <th style="width:48%">出玉数（玉）</th>
+          <th style="width:36%">確率（%）</th>
+          <th style="width:16%"></th>
+        </tr>
+      </thead>
+      <tbody id="distBody-st"></tbody>
+    </table>
+    <button class="dist-add-btn" onclick="addDistRow('st')">＋ 振り分けを追加</button>
+    <div class="dist-total">
+      <span>合計確率：</span>
+      <span class="total-val" id="distTotal-st">100%</span>
+      <span id="distTotalMsg-st"></span>
+    </div>
+  </div>
+
+  <!-- 出玉振り分け設定 (転落) -->
+  <div id="dist-section-tenraku" style="display:none">
+    <div class="section-divider">🎁 大当たり出玉振り分け</div>
+    <table class="dist-table">
+      <thead>
+        <tr>
+          <th style="width:48%">出玉数（玉）</th>
+          <th style="width:36%">確率（%）</th>
+          <th style="width:16%"></th>
+        </tr>
+      </thead>
+      <tbody id="distBody-tenraku"></tbody>
+    </table>
+    <button class="dist-add-btn" onclick="addDistRow('tenraku')">＋ 振り分けを追加</button>
+    <div class="dist-total">
+      <span>合計確率：</span>
+      <span class="total-val" id="distTotal-tenraku">100%</span>
+      <span id="distTotalMsg-tenraku"></span>
+    </div>
+  </div>
+
+  <!-- 共通 -->
+  <div class="section-divider" style="margin-top:16px">🔒 共通設定</div>
+  <div class="form-row-single">
+    <div class="form-group">
+      <label>連荘上限（無限ループ防止）</label>
+      <div class="input-wrap">
+        <input type="number" id="maxRensho" value="10000" min="1" max="100000" step="100" style="padding-left:12px" oninput="saveSettings()" />
+        <span class="input-prefix" style="border-left:1px solid #30363d;border-right:none;">連</span>
+      </div>
+      <span class="hint">通常は変更不要</span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" onclick="runSimulation()">▶ シミュレート</button>
+    <button class="btn-secondary" onclick="clearHistory()">🗑 履歴クリア</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📊 今回の結果</h2>
+  <div id="resultContent" class="no-result">まだシミュレートしていません</div>
+</div>
+
+<div class="card">
+  <h2>📜 履歴</h2>
+  <div class="history-table-wrap">
+    <div id="historyContent" class="empty-history">履歴がありません</div>
+  </div>
+</div>
+
+<script>
+  let currentTab = 'st';
+  let simHistory = [];
+  let historyId = 0;
+
+  const LS_KEY = 'rensho-sim-v1';
+
+  function saveSettings() {
+    try {
+      const data = {
+        tab: currentTab,
+        st:  { prob: document.getElementById('st-probDenom').value, games: document.getElementById('st-stGames').value },
+        tr:  { prob: document.getElementById('tr-probDenom').value, fall:  document.getElementById('tr-fallDenom').value },
+        maxRensho: document.getElementById('maxRensho').value,
+        distSt:      getDistRows('st'),
+        distTenraku: getDistRows('tenraku'),
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(data));
+    } catch(e) {}
+  }
+
+  function getDistRows(tab) {
+    return [...document.querySelectorAll('#distBody-' + tab + ' tr')].map(tr => ({
+      balls: parseFloat(tr.querySelector('.dist-balls').value) || 0,
+      prob:  parseFloat(tr.querySelector('.dist-prob').value)  || 0,
+    }));
+  }
+
+  function clearDistBody(tab) {
+    document.getElementById('distBody-' + tab).innerHTML = '';
+  }
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      if (d.st) {
+        document.getElementById('st-probDenom').value = d.st.prob;
+        document.getElementById('st-stGames').value   = d.st.games;
+      }
+      if (d.tr) {
+        document.getElementById('tr-probDenom').value = d.tr.prob;
+        document.getElementById('tr-fallDenom').value  = d.tr.fall;
+      }
+      if (d.maxRensho) document.getElementById('maxRensho').value = d.maxRensho;
+      if (d.distSt && d.distSt.length > 0) {
+        clearDistBody('st');
+        d.distSt.forEach(r => addDistRow('st', r.balls, r.prob));
+      }
+      if (d.distTenraku && d.distTenraku.length > 0) {
+        clearDistBody('tenraku');
+        d.distTenraku.forEach(r => addDistRow('tenraku', r.balls, r.prob));
+      }
+      if (d.tab) switchTab(d.tab);
+      return true;
+    } catch(e) { return false; }
+  }
+
+  // ─── 振り分けエディタ ───
+  const defaultDist = [
+    { balls: 3000, prob: 10 },
+    { balls: 1500, prob: 60 },
+    { balls:  800, prob: 30 },
+  ];
+
+  function initDist() {
+    if (!loadSettings()) {
+      defaultDist.forEach(d => addDistRow('st',      d.balls, d.prob));
+      defaultDist.forEach(d => addDistRow('tenraku', d.balls, d.prob));
+    }
+  }
+
+  function addDistRow(tab = currentTab, balls = 1500, prob = 10) {
+    const tbody = document.getElementById('distBody-' + tab);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="dist-input-wrap">
+          <input type="number" class="dist-balls" value="${balls}" min="0" step="100" oninput="updateDistTotal('${tab}')" />
+          <span class="dist-suffix">玉</span>
+        </div>
+      </td>
+      <td>
+        <div class="dist-input-wrap">
+          <input type="number" class="dist-prob" value="${prob}" min="0" max="100" step="0.1" oninput="updateDistTotal('${tab}')" />
+          <span class="dist-suffix">%</span>
+        </div>
+      </td>
+      <td style="text-align:center">
+        <button class="dist-del-btn" onclick="removeDistRow(this, '${tab}')" title="削除">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+    updateDistTotal(tab);
+  }
+
+  function removeDistRow(btn, tab) {
+    btn.closest('tr').remove();
+    updateDistTotal(tab);
+  }
+
+  function updateDistTotal(tab) {
+    const probs = [...document.querySelectorAll('#distBody-' + tab + ' .dist-prob')].map(el => parseFloat(el.value) || 0);
+    const total = probs.reduce((s, v) => s + v, 0);
+    const el    = document.getElementById('distTotal-' + tab);
+    const msg   = document.getElementById('distTotalMsg-' + tab);
+    el.textContent = total.toFixed(1) + '%';
+    const ok = Math.abs(total - 100) < 0.01;
+    el.className = 'total-val ' + (ok ? 'total-ok' : 'total-warn');
+    msg.textContent = ok ? '✓' : '(合計100%にしてください)';
+    msg.style.color = ok ? '#3fb950' : '#ff6b6b';
+    saveSettings();
+  }
+
+  function getDistribution() {
+    const rows = [...document.querySelectorAll('#distBody-' + currentTab + ' tr')];
+    return rows.map(tr => ({
+      balls: parseFloat(tr.querySelector('.dist-balls').value) || 0,
+      prob:  parseFloat(tr.querySelector('.dist-prob').value)  || 0,
+    }));
+  }
+
+  // 振り分けに従って出玉を1回抽選する
+  function drawBalls(dist) {
+    const total = dist.reduce((s, d) => s + d.prob, 0);
+    let r = Math.random() * total;
+    for (const d of dist) {
+      r -= d.prob;
+      if (r <= 0) return d.balls;
+    }
+    return dist[dist.length - 1]?.balls ?? 0;
+  }
+
+  // ─── タブ切り替え ───
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.getElementById('form-st').style.display             = tab === 'st'      ? '' : 'none';
+    document.getElementById('form-tenraku').style.display        = tab === 'tenraku' ? '' : 'none';
+    document.getElementById('dist-section-st').style.display     = tab === 'st'      ? '' : 'none';
+    document.getElementById('dist-section-tenraku').style.display = tab === 'tenraku' ? '' : 'none';
+    saveSettings();
+  }
+
+  function runSimulation() {
+    const maxRen = parseInt(document.getElementById('maxRensho').value, 10);
+    if (isNaN(maxRen) || maxRen < 1) { alert('連荘上限に正しい値を入力してください。'); return; }
+    const dist = getDistribution();
+    if (dist.length === 0) { alert('出玉振り分けを1行以上追加してください。'); return; }
+    const totalProb = dist.reduce((s, d) => s + d.prob, 0);
+    if (Math.abs(totalProb - 100) > 5) {
+      if (!confirm(`振り分け確率の合計が ${totalProb.toFixed(1)}% です。このまま続けますか？`)) return;
+    }
+    if (currentTab === 'st') runST(maxRen, dist);
+    else                     runTenraku(maxRen, dist);
+  }
+
+  // ─── ST方式 ───
+  function runST(maxRen, dist) {
+    const denom   = parseFloat(document.getElementById('st-probDenom').value);
+    const stGames = parseInt(document.getElementById('st-stGames').value, 10);
+    if (isNaN(denom) || denom <= 0 || isNaN(stGames) || stGames < 1) { alert('ST方式の設定値が不正です。'); return; }
+    const prob = 1 / denom;
+
+    const hits = [];
+    let rensho = 0, remaining = stGames;
+
+    while (remaining > 0 && rensho < maxRen) {
+      let hit = false, hitGame = 0;
+      for (let g = 0; g < remaining; g++) {
+        if (Math.random() < prob) { hit = true; hitGame = g + 1; break; }
+      }
+      if (hit) { hits.push({ game: hitGame, balls: drawBalls(dist) }); rensho++; remaining = stGames; }
+      else break;
+    }
+
+    const totalGames  = hits.reduce((s, h) => s + h.game, 0);
+    const avgGame     = hits.length > 0 ? totalGames / hits.length : 0;
+    const totalBalls  = hits.reduce((s, h) => s + h.balls, 0);
+
+    renderResult({
+      mode: 'st', rensho, hits, stGames, totalGames, avgGame, totalBalls,
+      label: `当たり 1/${denom}（${(prob*100).toFixed(2)}%）　ST ${stGames}回`,
+    });
+
+    const seq = hits.map((h, i) => `${i+1}連:${h.game}G`).join(' ');
+    simHistory.unshift({
+      id: ++historyId, mode: 'st',
+      condStr: `1/${denom} / ST${stGames}回`,
+      rensho, avgGame: avgGame.toFixed(1), seq,
+      endLabel: rensho === 0 ? '単発終了' : '規定消化',
+      totalBalls,
+    });
+    renderHistory();
+  }
+
+  // ─── 転落方式 ───
+  function runTenraku(maxRen, dist) {
+    const hitDenom  = parseFloat(document.getElementById('tr-probDenom').value);
+    const fallDenom = parseFloat(document.getElementById('tr-fallDenom').value);
+    if (isNaN(hitDenom) || hitDenom <= 0 || isNaN(fallDenom) || fallDenom <= 0) { alert('転落方式の設定値が不正です。'); return; }
+    const hitProb  = 1 / hitDenom;
+    const fallProb = 1 / fallDenom;
+
+    const hits = [];
+    let fallGame = 0, rensho = 0, running = true;
+
+    while (running && rensho < maxRen) {
+      let hit = false, fell = false, gameCount = 0;
+      while (!hit && !fell) {
+        gameCount++;
+        if (Math.random() < hitProb) { hit = true; hits.push({ game: gameCount, balls: drawBalls(dist) }); }
+        else if (Math.random() < fallProb) { fell = true; fallGame = gameCount; }
+      }
+      if (hit) rensho++;
+      else running = false;
+    }
+
+    const totalGames  = hits.reduce((s, h) => s + h.game, 0) + fallGame;
+    const avgGame     = hits.length > 0 ? hits.reduce((s, h) => s + h.game, 0) / hits.length : 0;
+    const totalBalls  = hits.reduce((s, h) => s + h.balls, 0);
+
+    renderResult({
+      mode: 'tenraku', rensho, hits, totalGames, avgGame, fallGame, totalBalls,
+      label: `当たり 1/${hitDenom}（${(hitProb*100).toFixed(2)}%）　転落 1/${fallDenom}（${(fallProb*100).toFixed(2)}%）`,
+    });
+
+    const seq = hits.map((h, i) => `${i+1}連:${h.game}G`).join(' ');
+    simHistory.unshift({
+      id: ++historyId, mode: 'tenraku',
+      condStr: `当 1/${hitDenom} / 転 1/${fallDenom}`,
+      rensho, avgGame: avgGame.toFixed(1), seq,
+      endLabel: `転落 ${fallGame}G`,
+      totalBalls,
+    });
+    renderHistory();
+  }
+
+  // ─── 結果描画 ───
+  function renderResult(o) {
+    const allGameNums = o.hits.map(h => h.game);
+    if (o.fallGame) allGameNums.push(o.fallGame);
+    const barMax = allGameNums.length > 0 ? Math.max(...allGameNums) : 1;
+
+    // 当たり回転数バー
+    let hitRowsHtml = '';
+    o.hits.forEach((h, i) => {
+      const pct = Math.max(2, (h.game / barMax * 100)).toFixed(1);
+      hitRowsHtml += `
+        <div class="hit-row">
+          <span class="hit-label">${i + 1}連目</span>
+          <div class="hit-track"><div class="hit-fill color-hit" style="width:${pct}%">${h.game}G</div></div>
+          <span class="hit-game-num">${h.game}回転目</span>
+          <span class="hit-balls-badge">${h.balls.toLocaleString()}玉</span>
+        </div>`;
+    });
+
+    let fallRowHtml = '';
+    if (o.mode === 'tenraku' && o.fallGame > 0) {
+      const pct = Math.max(2, (o.fallGame / barMax * 100)).toFixed(1);
+      fallRowHtml = `
+        <div class="section-title">転落</div>
+        <div class="hit-row end-row">
+          <span class="hit-label" style="color:#ff6b6b">転落</span>
+          <div class="hit-track"><div class="hit-fill color-fall" style="width:${pct}%">${o.fallGame}G</div></div>
+          <span class="hit-game-num" style="color:#ff6b6b">${o.fallGame}回転目</span>
+          <span class="hit-balls-badge" style="opacity:0"></span>
+        </div>`;
+    }
+
+    let stEndHtml = '';
+    if (o.mode === 'st') {
+      stEndHtml = `
+        <div class="hit-row end-row" style="margin-top:4px">
+          <span class="hit-label" style="color:#484f58">終了</span>
+          <div class="hit-track" style="background:#161b22;border:1px dashed #30363d">
+            <div style="padding:0 8px;font-size:0.73rem;color:#484f58;line-height:22px">${o.stGames}回転 抜け</div>
+          </div>
+          <span class="hit-game-num" style="color:#484f58">—</span>
+          <span class="hit-balls-badge" style="opacity:0"></span>
+        </div>`;
+    }
+
+    // 出玉累積バー（当たりごとの累計獲得玉）
+    let cumulHtml = '';
+    if (o.hits.length > 0) {
+      let cumul = 0;
+      const cumulData = [];
+      o.hits.forEach((h, i) => {
+        cumul += h.balls;
+        cumulData.push({ label: `${i+1}連後`, val: cumul });
+      });
+      const cumulMax = cumulData[cumulData.length - 1]?.val || 1;
+
+      cumulHtml = `<div class="section-title">累積獲得玉（当たりごと）</div>`;
+      cumulData.forEach(d => {
+        const pct = Math.max(2, (d.val / (cumulMax || 1) * 100)).toFixed(1);
+        cumulHtml += `
+          <div class="cumul-bar-row">
+            <span class="cumul-label">${d.label}</span>
+            <div class="cumul-track">
+              <div class="cumul-fill cf-gold" style="width:${pct}%">${d.val.toLocaleString()}玉</div>
+            </div>
+            <span class="cumul-val">${d.val.toLocaleString()}</span>
+          </div>`;
+      });
+    }
+
+    // 出玉サマリ
+    const dist = getDistribution();
+    const avgBalls = dist.reduce((s, d) => s + d.balls * d.prob / 100, 0);
+    const payoutHtml = `
+      <div class="payout-area">
+        <div class="payout-area-title">🎁 出玉シミュレーション</div>
+        <div class="payout-grid">
+          <div class="payout-cell">
+            <div class="pv pv-plus">${o.totalBalls.toLocaleString()}</div>
+            <div class="pl">獲得玉（合計）</div>
+          </div>
+          <div class="payout-cell">
+            <div class="pv" style="color:#a371f7">${o.rensho > 0 ? Math.round(o.totalBalls / o.rensho).toLocaleString() : '—'}</div>
+            <div class="pl">1連あたり平均出玉</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:0.73rem;color:#484f58;text-align:right">
+          設定期待値: ${avgBalls.toFixed(0)}玉/連
+        </div>
+      </div>`;
+
+    const renshoColor = o.rensho >= 10 ? 'red' : o.rensho >= 3 ? 'gold' : o.rensho >= 1 ? 'blue' : 'gray';
+
+    document.getElementById('resultContent').innerHTML = `
+      <div class="result-summary animated">
+        <div class="stat-pill">
+          <div class="val ${renshoColor}">${o.rensho}</div>
+          <div class="lbl">連荘数</div>
+        </div>
+        <div class="stat-pill">
+          <div class="val purple">${o.avgGame.toFixed(1)}</div>
+          <div class="lbl">平均当たりG数</div>
+        </div>
+        <div class="stat-pill">
+          <div class="val gold">${o.totalBalls.toLocaleString()}</div>
+          <div class="lbl">総獲得玉</div>
+        </div>
+      </div>
+      <div style="font-size:0.78rem;color:#8b949e;margin-bottom:12px">${o.label}</div>
+      ${payoutHtml}
+      ${o.hits.length > 0 ? `<div class="section-title" style="margin-top:16px">当たり回転数 & 出玉</div>` : ''}
+      <div class="hit-list">
+        ${hitRowsHtml}
+        ${fallRowHtml}
+        ${stEndHtml}
+      </div>
+      ${cumulHtml}
+      ${o.hits.length === 0 ? '<div style="color:#484f58;font-size:0.85rem;padding:12px 0">当たりなし（単発終了）</div>' : ''}`;
+  }
+
+  // ─── 履歴描画 ───
+  function renderHistory() {
+    if (simHistory.length === 0) {
+      document.getElementById('historyContent').innerHTML = '<div class="empty-history">履歴がありません</div>';
+      return;
+    }
+
+    const rows = simHistory.map(h => {
+      const rBadge    = h.rensho >= 10 ? 'badge-red' : h.rensho >= 3 ? 'badge-gold' : h.rensho >= 1 ? 'badge-blue' : 'badge-gray';
+      const modeBadge = h.mode === 'st' ? 'badge-mode-st' : 'badge-mode-tenraku';
+      const modeLabel = h.mode === 'st' ? 'ST方式' : '転落方式';
+      return `
+        <tr>
+          <td>#${h.id}</td>
+          <td><span class="badge ${modeBadge}">${modeLabel}</span></td>
+          <td style="font-size:0.75rem">${h.condStr}</td>
+          <td><span class="badge ${rBadge}">${h.rensho}連</span></td>
+          <td>${h.avgGame}G</td>
+          <td class="balls-col">${h.totalBalls.toLocaleString()}玉</td>
+          <td style="font-size:0.72rem;color:#484f58">${h.endLabel}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('historyContent').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>方式</th>
+            <th>設定</th>
+            <th>連荘数</th>
+            <th>平均当たりG</th>
+            <th>獲得玉</th>
+            <th>終了</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function clearHistory() {
+    if (simHistory.length === 0) return;
+    if (!confirm('履歴をすべて削除しますか？')) return;
+    simHistory = [];
+    historyId = 0;
+    renderHistory();
+  }
+
+  // 初期化
+  initDist();
+</script>
+</body>
+</html>
