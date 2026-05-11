@@ -1,0 +1,820 @@
+/* ─── タブバー ─── */
+.tab-bar {
+  display: flex;
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 9px 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.tab-btn[data-tab="st"].active {
+  box-shadow: inset 0 0 0 1px var(--color-gold);
+  color: var(--color-gold);
+}
+
+.tab-btn[data-tab="tenraku"].active {
+  box-shadow: inset 0 0 0 1px var(--color-red);
+  color: var(--color-red);
+}
+
+/* ─── カード ─── */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 560px;
+  margin-bottom: 24px;
+}
+
+.card h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+/* ─── 設定ヘッダー ─── */
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.preset-menu-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.settings-menu-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.settings-menu-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+/* ─── クイックメニュー ─── */
+.preset-quick-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 140px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  display: none;
+  z-index: 10001;
+}
+
+.preset-quick-menu.open {
+  display: block;
+}
+
+.preset-quick-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.preset-quick-item:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border);
+}
+
+/* ─── フォーム ─── */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-row-single {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.input-wrap:focus-within {
+  border-color: var(--color-gold);
+}
+
+.input-prefix {
+  padding: 0 10px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ─── モード説明 ─── */
+.mode-desc {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.dot-st {
+  background: var(--color-gold);
+}
+
+.dot-tenraku {
+  background: var(--color-red);
+}
+
+/* ─── セクション分割 ─── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
+
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── ボタン行 ─── */
+.btn-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* ─── 振り分けテーブル ─── */
+.dist-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.dist-table th {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 0 6px 6px;
+  text-align: center;
+}
+
+.dist-table td {
+  padding: 4px 4px;
+}
+
+.dist-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  height: 36px;
+  transition: border-color 0.2s;
+}
+
+.dist-input-wrap:focus-within {
+  border-color: var(--color-gold);
+}
+
+.dist-input-wrap input[type="number"] {
+  height: 36px;
+  font-size: 0.9rem;
+  padding: 0 8px;
+}
+
+.dist-suffix {
+  padding: 0 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.dist-del-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--color-red);
+  border-radius: 6px;
+  padding: 0;
+  width: 30px;
+  height: 36px;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.dist-del-btn:hover {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.dist-add-btn {
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border);
+  color: var(--color-blue);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.dist-add-btn:hover {
+  border-color: var(--color-blue);
+}
+
+.dist-total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.dist-total .total-val {
+  font-weight: 700;
+}
+
+.total-ok {
+  color: var(--color-green);
+}
+
+.total-warn {
+  color: var(--color-red);
+}
+
+/* ─── プリセットセレクト ─── */
+.preset-select {
+  width: 100%;
+  height: 40px;
+  background: var(--bg-tertiary);
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  padding: 0 12px;
+  font-size: 0.9rem;
+}
+
+.preset-select option {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.preset-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  height: 40px;
+  width: 100%;
+  padding: 0 12px;
+}
+
+/* ─── 結果サマリ ─── */
+.result-summary {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.stat-pill {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 80px;
+}
+
+.stat-pill .val {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.stat-pill .lbl {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.val.gold {
+  color: var(--color-gold);
+}
+
+.val.red {
+  color: var(--color-red);
+}
+
+.val.blue {
+  color: var(--color-blue);
+}
+
+.val.purple {
+  color: var(--color-purple);
+}
+
+.val.green {
+  color: var(--color-green);
+}
+
+.val.gray {
+  color: var(--text-secondary);
+}
+
+/* ─── ヒットバー ─── */
+.hit-list {
+  margin-top: 4px;
+}
+
+.hit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.hit-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.hit-track {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  height: 22px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hit-fill {
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--bg-primary);
+  white-space: nowrap;
+  min-width: 2px;
+}
+
+.hit-fill.color-hit {
+  background: linear-gradient(90deg, var(--color-blue), #79c0ff);
+}
+
+.hit-fill.color-fall {
+  background: linear-gradient(90deg, var(--color-red), #ffa07a);
+}
+
+.hit-game-num {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  width: 56px;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.hit-balls-badge {
+  font-size: 0.72rem;
+  color: var(--color-gold);
+  background: rgba(247, 201, 72, 0.1);
+  border: 1px solid rgba(247, 201, 72, 0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin: 14px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.end-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  opacity: 0.6;
+}
+
+/* ─── 出玉エリア ─── */
+.payout-area {
+  margin-top: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.payout-area-title {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.payout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.payout-cell {
+  text-align: center;
+}
+
+.payout-cell .pv {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.payout-cell .pl {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.pv-plus {
+  color: var(--color-green);
+}
+
+.pv-minus {
+  color: var(--color-red);
+}
+
+.pv-zero {
+  color: var(--text-secondary);
+}
+
+/* ─── 累積バー ─── */
+.cumul-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cumul-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cumul-track {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  height: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cumul-fill {
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 2px;
+  transition: width 0.3s;
+}
+
+.cumul-fill.cf-gold {
+  background: linear-gradient(90deg, var(--color-gold), #ffd700);
+  color: var(--bg-primary);
+}
+
+.cumul-val {
+  font-size: 0.75rem;
+  width: 72px;
+  text-align: left;
+  flex-shrink: 0;
+  color: var(--color-gold);
+}
+
+/* ─── 履歴テーブル ─── */
+.history-table-wrap {
+  overflow-x: auto;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--bg-tertiary);
+  transition: background 0.15s;
+}
+
+tbody tr:hover {
+  background: #1c2128;
+}
+
+tbody td {
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* ─── バッジ ─── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge-gold {
+  background: rgba(247, 201, 72, 0.15);
+  color: var(--color-gold);
+}
+
+.badge-red {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--color-red);
+}
+
+.badge-blue {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--color-blue);
+}
+
+.badge-gray {
+  background: rgba(139, 148, 158, 0.15);
+  color: var(--text-secondary);
+}
+
+.badge-mode-st {
+  background: rgba(247, 201, 72, 0.1);
+  color: var(--color-gold);
+  font-size: 0.68rem;
+}
+
+.badge-mode-tenraku {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--color-red);
+  font-size: 0.68rem;
+}
+
+/* ─── シーケンスセル ─── */
+.seq-cell {
+  font-size: 0.75rem;
+  color: var(--color-blue);
+  max-width: 180px;
+  word-break: break-all;
+  text-align: left;
+  line-height: 1.7;
+}
+
+.balls-col {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+
+/* ─── 空状態 ─── */
+.empty-history {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 24px;
+}
+
+.no-result {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ─── CRTテレビ消灯演出 ─── */
+#blackout-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: #000;
+}
+
+#blackout-overlay.phase-flash {
+  background: #fffff8;
+  opacity: 1;
+  pointer-events: all;
+  transition: none;
+}
+
+#blackout-overlay.phase-black {
+  background: #000;
+  opacity: 1;
+  pointer-events: all;
+  transition: background 0.08s ease;
+}
+
+#blackout-overlay.phase-out {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+#tv-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(30, 100, 255, 0.4) 8%,
+    rgba(80, 160, 255, 0.9) 30%,
+    #58a6ff 50%,
+    rgba(80, 160, 255, 0.9) 70%,
+    rgba(30, 100, 255, 0.4) 92%,
+    transparent 100%
+  );
+  box-shadow: 0 0 5px 2px rgba(210, 210, 255, 1), 0 0 14px 4px rgba(190, 190, 255, 0.6);
+  transform: scaleX(0);
+  opacity: 0;
+}
+
+#tv-line.line-shrink {
+  animation: tv-line-shrink 0.3s cubic-bezier(0.55, 0, 1, 1) forwards;
+}
+
+@keyframes tv-line-shrink {
+  0% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  60% {
+    transform: scaleX(0.07);
+    opacity: 1;
+  }
+  82% {
+    transform: scaleX(0.02);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
