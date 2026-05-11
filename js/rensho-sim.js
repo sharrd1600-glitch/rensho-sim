@@ -314,7 +314,22 @@
     el.className = 'total-val ' + (ok ? 'total-ok' : 'total-warn');
     msg.textContent = ok ? '✓' : '(合計100%にしてください)';
     msg.style.color = ok ? '#3fb950' : '#ff6b6b';
+    updateSimulateButtonState();
     saveSettings();
+  }
+
+  function updateSimulateButtonState() {
+    const stDist = getDistribution();
+    const currentTabDist = currentTab === 'st' ? getDistRows('st') : getDistRows('tenraku');
+    const stTotal = currentTabDist.reduce((s, d) => s + d.prob, 0);
+    const isValid = Math.abs(stTotal - 100) < 0.01;
+    const btn = document.querySelector('.btn-primary');
+    if (btn) {
+      btn.disabled = !isValid;
+      btn.title = isValid ? '' : '出玉振り分け確率の合計が100%になるまで実行できません';
+      btn.style.opacity = isValid ? '1' : '0.5';
+      btn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+    }
   }
 
   function getDistribution() {
@@ -345,6 +360,7 @@
     document.getElementById('dist-section-st').style.display     = tab === 'st'      ? '' : 'none';
     document.getElementById('dist-section-tenraku').style.display = tab === 'tenraku' ? '' : 'none';
     renderPresetSelect();
+    updateSimulateButtonState();
     saveSettings();
   }
 
@@ -354,11 +370,36 @@
     const dist = getDistribution();
     if (dist.length === 0) { alert('出玉振り分けを1行以上追加してください。'); return; }
     const totalProb = dist.reduce((s, d) => s + d.prob, 0);
-    if (Math.abs(totalProb - 100) > 5) {
-      if (!confirm(`振り分け確率の合計が ${totalProb.toFixed(1)}% です。このまま続けますか？`)) return;
+    if (Math.abs(totalProb - 100) > 0.01) {
+      alert(`振り分け確率の合計が ${totalProb.toFixed(1)}% です。合計が100%になるように調整してください。`);
+      return;
     }
     if (currentTab === 'st') runST(maxRen, dist);
     else                     runTenraku(maxRen, dist);
+  }
+
+  function formatProbabilityPercent(prob) {
+    if (!Number.isFinite(prob) || prob < 0) return '—';
+    const pct = prob * 100;
+    if (pct >= 1) return pct.toFixed(2) + '%';
+    if (pct >= 0.01) return pct.toFixed(3) + '%';
+    if (pct > 0) return '<0.01%';
+    return '0.00%';
+  }
+
+  function calcExpectedProbST(hitProbPerGame, stGames, rensho, maxRen) {
+    const cycleHitProb = 1 - Math.pow(1 - hitProbPerGame, stGames);
+    if (rensho >= maxRen) return Math.pow(cycleHitProb, maxRen);
+    return Math.pow(cycleHitProb, rensho) * (1 - cycleHitProb);
+  }
+
+  function calcExpectedProbTenraku(hitProb, fallProb, rensho, maxRen) {
+    const effectiveFallProb = Math.max(0, Math.min(1, hitProb + fallProb) - hitProb);
+    const settleProb = hitProb + effectiveFallProb;
+    if (settleProb <= 0) return 0;
+    const chainHitProb = hitProb / settleProb;
+    if (rensho >= maxRen) return Math.pow(chainHitProb, maxRen);
+    return Math.pow(chainHitProb, rensho) * (1 - chainHitProb);
   }
 
   // ─── ST方式 ───
@@ -383,10 +424,12 @@
     const totalGames  = hits.reduce((s, h) => s + h.game, 0);
     const avgGame     = hits.length > 0 ? totalGames / hits.length : 0;
     const totalBalls  = hits.reduce((s, h) => s + h.balls, 0);
+    const expectedProb = calcExpectedProbST(prob, stGames, rensho, maxRen);
+    const expectedProbText = formatProbabilityPercent(expectedProb);
 
     const doRenderST = () => {
       renderResult({
-        mode: 'st', rensho, hits, stGames, totalGames, avgGame, totalBalls,
+        mode: 'st', rensho, hits, stGames, totalGames, avgGame, totalBalls, expectedProbText,
         label: `当たり 1/${denom}（${(prob*100).toFixed(2)}%）　ST ${stGames}回`,
       });
     };
@@ -401,6 +444,7 @@
       id: ++historyId, mode: 'st',
       condStr: `1/${denom} / ST${stGames}回`,
       rensho, avgGame: avgGame.toFixed(1), seq,
+      expectedProbText,
       endLabel: rensho === 0 ? '単発終了' : '規定消化',
       totalBalls,
     });
@@ -422,8 +466,15 @@
       let hit = false, fell = false, gameCount = 0;
       while (!hit && !fell) {
         gameCount++;
-        if (Math.random() < hitProb) { hit = true; hits.push({ game: gameCount, balls: drawBalls(dist) }); }
-        else if (Math.random() < fallProb) { fell = true; fallGame = gameCount; }
+        const r = Math.random();
+        if (r < hitProb) { 
+          hit = true; 
+          hits.push({ game: gameCount, balls: drawBalls(dist) }); 
+        }
+        else if (r < hitProb + fallProb) { 
+          fell = true; 
+          fallGame = gameCount; 
+        }
       }
       if (hit) rensho++;
       else running = false;
@@ -432,10 +483,12 @@
     const totalGames  = hits.reduce((s, h) => s + h.game, 0) + fallGame;
     const avgGame     = hits.length > 0 ? hits.reduce((s, h) => s + h.game, 0) / hits.length : 0;
     const totalBalls  = hits.reduce((s, h) => s + h.balls, 0);
+    const expectedProb = calcExpectedProbTenraku(hitProb, fallProb, rensho, maxRen);
+    const expectedProbText = formatProbabilityPercent(expectedProb);
 
     const doRenderTenraku = () => {
       renderResult({
-        mode: 'tenraku', rensho, hits, totalGames, avgGame, fallGame, totalBalls,
+        mode: 'tenraku', rensho, hits, totalGames, avgGame, fallGame, totalBalls, expectedProbText,
         label: `当たり 1/${hitDenom}（${(hitProb*100).toFixed(2)}%）　転落 1/${fallDenom}（${(fallProb*100).toFixed(2)}%）`,
       });
     };
@@ -450,6 +503,7 @@
       id: ++historyId, mode: 'tenraku',
       condStr: `当 1/${hitDenom} / 転 1/${fallDenom}`,
       rensho, avgGame: avgGame.toFixed(1), seq,
+      expectedProbText,
       endLabel: `転落 ${fallGame}G`,
       totalBalls,
     });
@@ -501,52 +555,6 @@
         </div>`;
     }
 
-    // 出玉累積バー（当たりごとの累計獲得玉）
-    let cumulHtml = '';
-    if (o.hits.length > 0) {
-      let cumul = 0;
-      const cumulData = [];
-      o.hits.forEach((h, i) => {
-        cumul += h.balls;
-        cumulData.push({ label: `${i+1}連後`, val: cumul });
-      });
-      const cumulMax = cumulData[cumulData.length - 1]?.val || 1;
-
-      cumulHtml = `<div class="section-title">累積獲得玉（当たりごと）</div>`;
-      cumulData.forEach(d => {
-        const pct = Math.max(2, (d.val / (cumulMax || 1) * 100)).toFixed(1);
-        cumulHtml += `
-          <div class="cumul-bar-row">
-            <span class="cumul-label">${d.label}</span>
-            <div class="cumul-track">
-              <div class="cumul-fill cf-gold" style="width:${pct}%">${d.val.toLocaleString()}玉</div>
-            </div>
-            <span class="cumul-val">${d.val.toLocaleString()}</span>
-          </div>`;
-      });
-    }
-
-    // 出玉サマリ
-    const dist = getDistribution();
-    const avgBalls = dist.reduce((s, d) => s + d.balls * d.prob / 100, 0);
-    const payoutHtml = `
-      <div class="payout-area">
-        <div class="payout-area-title">🎁 出玉シミュレーション</div>
-        <div class="payout-grid">
-          <div class="payout-cell">
-            <div class="pv pv-plus">${o.totalBalls.toLocaleString()}</div>
-            <div class="pl">獲得玉（合計）</div>
-          </div>
-          <div class="payout-cell">
-            <div class="pv" style="color:#a371f7">${o.rensho > 0 ? Math.round(o.totalBalls / o.rensho).toLocaleString() : '—'}</div>
-            <div class="pl">1連あたり平均出玉</div>
-          </div>
-        </div>
-        <div style="margin-top:10px;font-size:0.73rem;color:#484f58;text-align:right">
-          設定期待値: ${avgBalls.toFixed(0)}玉/連
-        </div>
-      </div>`;
-
     const renshoColor = o.rensho >= 10 ? 'red' : o.rensho >= 3 ? 'gold' : o.rensho >= 1 ? 'blue' : 'gray';
 
     document.getElementById('resultContent').innerHTML = `
@@ -556,8 +564,8 @@
           <div class="lbl">連荘数</div>
         </div>
         <div class="stat-pill">
-          <div class="val purple">${o.avgGame.toFixed(1)}</div>
-          <div class="lbl">平均当たりG数</div>
+          <div class="val purple">${o.expectedProbText}</div>
+          <div class="lbl">設定期待確率</div>
         </div>
         <div class="stat-pill">
           <div class="val gold">${o.totalBalls.toLocaleString()}</div>
@@ -565,14 +573,12 @@
         </div>
       </div>
       <div style="font-size:0.78rem;color:#8b949e;margin-bottom:12px">${o.label}</div>
-      ${payoutHtml}
       ${o.hits.length > 0 ? `<div class="section-title" style="margin-top:16px">当たり回転数 & 出玉</div>` : ''}
       <div class="hit-list">
         ${hitRowsHtml}
         ${fallRowHtml}
         ${stEndHtml}
       </div>
-      ${cumulHtml}
       ${o.hits.length === 0 ? '<div style="color:#484f58;font-size:0.85rem;padding:12px 0">当たりなし（単発終了）</div>' : ''}`;
   }
 
@@ -593,7 +599,7 @@
           <td><span class="badge ${modeBadge}">${modeLabel}</span></td>
           <td style="font-size:0.75rem">${h.condStr}</td>
           <td><span class="badge ${rBadge}">${h.rensho}連</span></td>
-          <td>${h.avgGame}G</td>
+          <td style="font-size:0.75rem;color:#a371f7">${h.expectedProbText}</td>
           <td class="balls-col">${h.totalBalls.toLocaleString()}玉</td>
           <td style="font-size:0.72rem;color:#484f58">${h.endLabel}</td>
         </tr>`;
@@ -607,7 +613,7 @@
             <th>方式</th>
             <th>設定</th>
             <th>連荘数</th>
-            <th>平均当たりG</th>
+            <th>期待確率</th>
             <th>獲得玉</th>
             <th>終了</th>
           </tr>
@@ -666,3 +672,4 @@
   // 初期化
   initDist();
   renderPresetSelect();
+  updateSimulateButtonState();
